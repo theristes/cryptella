@@ -22,6 +22,8 @@ type Cryptella struct {
 	interval      string
 	limit         int
 	buyThresehold float64
+	balanceAsset  float64
+	tradeMode     string // PULL | PUSH
 
 	status string // BUY |  BOUGHT | SELL | SOLD | NONE
 }

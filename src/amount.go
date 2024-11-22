@@ -1,23 +1,24 @@
 package cryptella
 
-import "math"
+import (
+	"math"
+)
 
 func (c *Cryptella) fillAmount() {
 
 	value, _ := c.api.GetBalanceFreeApi("USDT")
 
-	available := value * 0.75
+	available := value * c.balanceAsset
 
 	price, _, _, _, _ := c.api.GetPriceFromApi(c.symbol)
 
-	c.amount = c.calculateAmount(available, price)
+	qty := available / price
+	c.amount = c.calculateAmount(qty)
 }
 
-func (c *Cryptella) calculateAmount(available float64, price float64) float64 {
+func (c *Cryptella) calculateAmount(qty float64) float64 {
 
-	qty := available / price
-
-	minQty, maxQty, stepSize, minNotional, _, _, _, _, _, err := c.api.GetFiltersFromApi(c.symbol)
+	minQty, maxQty, stepSize, _, _, _, _, _, _, err := c.api.GetFiltersFromApi(c.symbol)
 	if err != nil {
 		return 0
 	}
@@ -30,12 +31,6 @@ func (c *Cryptella) calculateAmount(available float64, price float64) float64 {
 	}
 
 	qty = math.Floor(qty/stepSize) * stepSize
-
-	if qty*stepSize*price < minNotional {
-
-		qty = math.Ceil(minNotional/price/stepSize) * stepSize
-
-	}
 
 	return qty
 }

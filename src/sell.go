@@ -6,7 +6,7 @@ import (
 
 func (c *Cryptella) sell() {
 
-	err := c.api.PlaceSellOrderOnApi(c.symbol, c.amount)
+	err := c.api.PlaceSellOrderOnApi(c.symbol, c.amount, c.sellPrice)
 	if err != nil {
 		log.Printf("Error placing sell order: %v", err)
 		return
@@ -15,6 +15,7 @@ func (c *Cryptella) sell() {
 	c.status = SOLD
 	c.maxTrades--
 	c.ShowInfo()
+	c.fillLowPrice()
 
 	log.Printf("Sold -> : %f at Price %f", c.amount, c.sellPrice)
 	logger, _ := NewLogger()

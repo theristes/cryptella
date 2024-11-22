@@ -6,14 +6,14 @@ import (
 
 func (c *Cryptella) buy() {
 
-	err := c.api.PlaceBuyOrderOnApi(c.symbol, c.amount)
+	err := c.api.PlaceBuyOrderOnApi(c.symbol, c.amount, c.buyPrice)
 	if err != nil {
 		log.Printf("Error placing buy order: %v", err)
 		return
 	}
-
-	c.amount = c.amount * (1 - c.fee)
 	c.status = BOUGHT
+
+	c.fillSellPrice() // We need to fill the sell price after buying
 
 	log.Printf("Bought -> : %f at Price %f", c.amount, c.buyPrice)
 	logger, _ := NewLogger()

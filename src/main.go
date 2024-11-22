@@ -19,11 +19,13 @@ func New() *Cryptella {
 	symbol := os.Getenv("SYMBOL")
 	fee, _ := strconv.ParseFloat(os.Getenv("FEE"), 64)
 	target, _ := strconv.ParseFloat(os.Getenv("TARGET"), 64)
+	tradeMode := os.Getenv("TRADE_MODE")
 
 	interval := os.Getenv("INTERVAL")
 	maxTrades, _ := strconv.Atoi(os.Getenv("MAX_TRADES"))
 	limit, _ := strconv.Atoi(os.Getenv("LIMIT"))
 	buyThresehold, _ := strconv.ParseFloat(os.Getenv("BUY_THRESEHOLD"), 64)
+	balanceAsset, _ := strconv.ParseFloat(os.Getenv("BALANCE_ASSET"), 64)
 
 	cryptella := &Cryptella{
 		symbol:        symbol,
@@ -31,8 +33,10 @@ func New() *Cryptella {
 		target:        target,
 		maxTrades:     maxTrades,
 		interval:      interval,
-		buyThresehold: buyThresehold,
 		limit:         limit,
+		buyThresehold: buyThresehold,
+		balanceAsset:  balanceAsset,
+		tradeMode:     tradeMode,
 		status:        NONE,
 	}
 
@@ -45,6 +49,8 @@ func New() *Cryptella {
 
 func (c *Cryptella) Start() {
 
+	i := 0
+
 	for {
 
 		if c.maxTrades == 0 {
@@ -55,11 +61,20 @@ func (c *Cryptella) Start() {
 		c.analyze()
 
 		if c.status == BUY {
+			i = 0
 			c.buy()
 		}
 
 		if c.status == SELL {
+			i = 0
 			c.sell()
+		}
+
+		i++
+
+		if i == 100 {
+			c.fillLowPrice()
+			i = 0
 		}
 
 		time.Sleep(500 * time.Millisecond)

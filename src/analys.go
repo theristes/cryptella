@@ -8,30 +8,34 @@ func (c *Cryptella) analyze() {
 
 	// Fetch the current market price
 	price, _, _, _, _ := c.api.GetPriceFromApi(c.symbol)
-	fmt.Printf("Price: %f, Need: %f\n", price, c.lowPrice)
 
-	switch c.status {
-	case "NONE":
+	if c.status == "NONE" {
+		fmt.Printf("Price: %f, Need: %f\n", price, c.lowPrice)
+	} else {
+		fmt.Printf("Price: %f, Bought: %f, Need Sell: %f\n", price, c.buyPrice, c.sellPrice)
+	}
 
+	if c.status == "NONE" || c.status == "SOLD" {
 		if c.buyStrategy(price) {
 			c.status = "BUY"
 			c.buyPrice = price
 			fmt.Printf("BUY signal detected at price %.2f\n", price)
 		}
-	case "BOUGHT":
+	} else if c.status == "BOUGHT" {
 
 		if c.sellStrategy(price) {
 			c.status = "SELL"
 			c.sellPrice = price
 			fmt.Printf("SELL signal detected at price %.2f\n", price)
 		}
-	default:
+	} else {
 		fmt.Println("No action for current status:", c.status)
+
 	}
 }
 
 func (c *Cryptella) sellStrategy(price float64) bool {
-	return price >= c.buyPrice*(1+c.target+c.fee)
+	return price >= c.sellPrice
 }
 
 func (c *Cryptella) buyStrategy(price float64) bool {
@@ -52,4 +56,8 @@ func (c *Cryptella) fillLowPrice() {
 	media := sum / float64(len(values))
 
 	c.lowPrice = media * discount
+}
+
+func (c *Cryptella) fillSellPrice() {
+	c.sellPrice = c.buyPrice * (1 + c.target + c.fee)
 }
