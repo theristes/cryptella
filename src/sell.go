@@ -12,12 +12,9 @@ func (c *Cryptella) sell() {
 		return
 	}
 
-	c.status = SOLD
 	c.maxTrades--
 	c.ShowInfo()
-	c.fillLowPrice()
 
-	log.Printf("Sold -> : %f at Price %f", c.amount, c.sellPrice)
 	logger, _ := NewLogger()
 	logger.Logf("Sold -> : %f at Price %f", c.amount, c.sellPrice)
 
