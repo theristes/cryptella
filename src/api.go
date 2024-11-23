@@ -89,9 +89,6 @@ func (c Api) PlaceBuyOrderOnApi(symbol string, amount float64, price float64) er
 		Side(binance.SideTypeBuy).
 		Type(binance.OrderTypeMarket).
 		Quantity(fmt.Sprintf("%.8f", amount)).
-		// Price(fmt.Sprintf("%.8f", price)).
-		// Type(binance.OrderTypeLimit).
-		// TimeInForce(binance.TimeInForceTypeGTC).
 		Do(context.Background())
 
 	if err != nil {
@@ -109,9 +106,6 @@ func (c Api) PlaceSellOrderOnApi(symbol string, amount float64, price float64) e
 		Side(binance.SideTypeSell).
 		Type(binance.OrderTypeMarket).
 		Quantity(fmt.Sprintf("%.8f", amount)).
-		// Price(fmt.Sprintf("%.8f", price)).
-		// Type(binance.OrderTypeLimit).
-		// TimeInForce(binance.TimeInForceTypeGTC).
 		Do(context.Background())
 	if err != nil {
 		log.Printf("Error placing sell order: %v", err)
