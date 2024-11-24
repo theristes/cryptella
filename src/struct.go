@@ -7,25 +7,22 @@ import (
 )
 
 type Cryptella struct {
-	api Api
-
-	symbol    string
-	amount    float64
-	buyPrice  float64
-	lowPrice  float64
-	sellPrice float64
-
-	// Config
-	fee           float64
-	target        float64
-	stopLoss      float64
-	maxTrades     int
-	interval      string
-	limit         int
-	buyThresehold float64
-	balanceAsset  float64
-
+	api    *Api
+	trade  *Trade
 	status string // BUY |  BOUGHT | SELL | SOLD | NONE
+	stopCh chan struct{}
+}
+
+type Trade struct {
+	symbol          string
+	amount          float64
+	fee             float64
+	target          float64
+	stopLoss        float64
+	reach           float64
+	current         float64
+	reached         float64
+	limitLossOrders int64
 }
 
 type Api struct {

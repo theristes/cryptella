@@ -8,13 +8,16 @@ import (
 
 var c *cryptella.Cryptella
 var info bool
+var history bool
 
 func init() {
 
 	flag.BoolVar(&info, "info", false, "Show information")
+	flag.BoolVar(&history, "history", false, "Show order history")
+
 	flag.Parse()
 
-	c = cryptella.New()
+	c = cryptella.NewCryptella()
 }
 
 func main() {
@@ -22,6 +25,11 @@ func main() {
 	if info {
 		c.ShowInfo()
 		c.ShowMarketInfo()
+		return
+	}
+
+	if history {
+		c.ShowOrderHistory()
 		return
 	}
 

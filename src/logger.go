@@ -8,7 +8,8 @@ import (
 )
 
 type Logger struct {
-	file *os.File
+	file   *os.File
+	header bool
 }
 
 func NewLogger() (*Logger, error) {
@@ -28,22 +29,22 @@ func NewLogger() (*Logger, error) {
 	}
 
 	return &Logger{
-		file: file,
+		file:   file,
+		header: false,
 	}, nil
 }
 
-func (l *Logger) Log(message string) {
+func (l *Logger) print(message string) {
 
 	logEntry := fmt.Sprintf("%s: %s\n", time.Now().Format("02/01/2006 15:04:05"), message)
-	print(logEntry)
 	if _, err := l.file.WriteString(logEntry); err != nil {
 		log.Println("Failed to write log entry:", err)
 	}
 }
 
-func (l *Logger) Logf(format string, a ...any) {
-	l.Log(fmt.Sprintf(format, a...))
-	log.Printf(format, a...)
+func (l *Logger) Log(format string, a ...any) {
+	l.print(fmt.Sprintf(format, a...))
+	println(fmt.Sprintf(format, a...))
 }
 
 func (l *Logger) Close() {

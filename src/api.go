@@ -11,11 +11,11 @@ import (
 	"github.com/adshao/go-binance/v2"
 )
 
-func (c *Cryptella) fillApi() {
+func NewApi() *Api {
 	apiKey := os.Getenv("BINANCE_API_KEY")
 	apiSecret := os.Getenv("BINANCE_API_SECRET")
 
-	c.api = Api{client: binance.NewClient(apiKey, apiSecret)}
+	return &Api{client: binance.NewClient(apiKey, apiSecret)}
 }
 
 func (c Api) GetAccountFromApi() binance.Account {
@@ -27,20 +27,20 @@ func (c Api) GetAccountFromApi() binance.Account {
 	return *account
 }
 
-func (c Api) GetPriceFromApi(symbol string) (float64, float64, float64, float64, error) {
-
-	res, err := c.client.NewKlinesService().Symbol(symbol).Interval("1s").Limit(1).Do(context.Background())
+func (c Api) GetPriceFromApi(symbol string) (float64, error) {
+	prices, err := c.client.NewListPricesService().Symbol(symbol).Do(context.Background())
 	if err != nil {
 		log.Printf("Error fetching price data: %s", err)
-		return 0, 0, 0, 0, err
+		return 0, err
 	}
 
-	close, _ := strconv.ParseFloat(res[0].Close, 64)
-	open, _ := strconv.ParseFloat(res[0].Open, 64)
-	high, _ := strconv.ParseFloat(res[0].High, 64)
-	low, _ := strconv.ParseFloat(res[0].Low, 64)
+	price, err := strconv.ParseFloat(prices[0].Price, 64)
+	if err != nil {
+		log.Printf("Error parsing price data: %s", err)
+		return 0, err
+	}
 
-	return close, open, high, low, nil
+	return price, nil
 }
 
 func (c Api) GetCandlesFromApi(symbol string, interval string, limit int) ([]Candle, error) {
@@ -82,84 +82,54 @@ func (c Api) GetCandlesFromApi(symbol string, interval string, limit int) ([]Can
 	return candles, nil
 }
 
-func (c Api) PlaceBuyOrderOnApi(symbol string, amount float64, price float64) error {
+func (c Api) PlaceOrderOnApi(status string, symbol string, amount float64, price float64) error {
 
 	_, err := c.client.NewCreateOrderService().
 		Symbol(symbol).
-		Side(binance.SideTypeBuy).
+		Side(binance.SideType(status)).
 		Type(binance.OrderTypeMarket).
 		Quantity(fmt.Sprintf("%.8f", amount)).
 		Do(context.Background())
-
-	if err != nil {
-		log.Printf("Error placing buy order: %v", err)
-		return err
-	}
-
-	return nil
+	return err
 }
 
-func (c Api) PlaceSellOrderOnApi(symbol string, amount float64, price float64) error {
-
-	_, err := c.client.NewCreateOrderService().
-		Symbol(symbol).
-		Side(binance.SideTypeSell).
-		Type(binance.OrderTypeMarket).
-		Quantity(fmt.Sprintf("%.8f", amount)).
-		Do(context.Background())
+func (c Api) GetOrderHistoryFromApi(symbol string) ([]binance.Order, error) {
+	orders, err := c.client.NewListOrdersService().Symbol(symbol).Do(context.Background())
 	if err != nil {
-		log.Printf("Error placing sell order: %v", err)
-		return err
+		log.Printf("Error fetching order history: %s", err)
+		return nil, err
 	}
 
-	return nil
+	convertedOrders := make([]binance.Order, len(orders))
+	for i, order := range orders {
+
+		if order.Price == "0.00000000" {
+			// Calculate the average price for market orders
+			cummulativeQuoteQty, _ := strconv.ParseFloat(order.CummulativeQuoteQuantity, 64)
+			executedQty, _ := strconv.ParseFloat(order.ExecutedQuantity, 64)
+			if executedQty > 0 {
+				order.Price = fmt.Sprintf("%.8f", cummulativeQuoteQty/executedQty)
+			} else {
+				order.Price = "0.00000000"
+			}
+		}
+		convertedOrders[i] = *order
+	}
+	return convertedOrders, nil
 }
 
-func (c Api) GetBalanceFreeApi(currency string) (float64, error) {
-
-	account, err := c.client.NewGetAccountService().Do(context.Background())
+func (c Api) GetMediaFromApi(symbol string) (float64, error) {
+	interval := "1m"
+	limit := 60
+	values, err := c.GetCandlesFromApi(symbol, interval, limit)
 	if err != nil {
 		return 0, err
 	}
 
-	for _, balance := range account.Balances {
-		if balance.Asset == currency {
-			free, _ := strconv.ParseFloat(balance.Free, 64)
-			return free, nil
-		}
+	var sum float64
+	for _, value := range values {
+		sum += value.Close
 	}
-
-	return 0, nil
-}
-
-func (c Api) GetFiltersFromApi(symbol string) (minQty, maxQty, stepSize, minNotional, minPrice, maxPrice, tickSize, multiplierUp, multiplierDown float64, err error) {
-	exchangeInfo, err := c.client.NewExchangeInfoService().Do(context.Background())
-	if err != nil {
-		return 0, 0, 0, 0, 0, 0, 0, 0, 0, err
-	}
-
-	for _, s := range exchangeInfo.Symbols {
-		if s.Symbol == symbol {
-			for _, filter := range s.Filters {
-				switch filter["filterType"] {
-				case "LOT_SIZE":
-					minQty, _ = strconv.ParseFloat(filter["minQty"].(string), 64)
-					maxQty, _ = strconv.ParseFloat(filter["maxQty"].(string), 64)
-					stepSize, _ = strconv.ParseFloat(filter["stepSize"].(string), 64)
-				case "MIN_NOTIONAL", "NOTIONAL":
-					minNotional, _ = strconv.ParseFloat(filter["minNotional"].(string), 64)
-				case "PRICE_FILTER":
-					minPrice, _ = strconv.ParseFloat(filter["minPrice"].(string), 64)
-					maxPrice, _ = strconv.ParseFloat(filter["maxPrice"].(string), 64)
-					tickSize, _ = strconv.ParseFloat(filter["tickSize"].(string), 64)
-				case "PERCENT_PRICE":
-					multiplierUp, _ = strconv.ParseFloat(filter["multiplierUp"].(string), 64)
-					multiplierDown, _ = strconv.ParseFloat(filter["multiplierDown"].(string), 64)
-				}
-			}
-
-			return minQty, maxQty, stepSize, minNotional, minPrice, maxPrice, tickSize, multiplierUp, multiplierDown, nil
-		}
-	}
-	return 0, 0, 0, 0, 0, 0, 0, 0, 0, fmt.Errorf("filters not found for symbol %s", symbol)
+	media := sum / float64(len(values))
+	return media, nil
 }

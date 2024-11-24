@@ -1,63 +1,59 @@
 package cryptella
 
 import (
-	"fmt"
 	"log"
-	"os"
-	"strconv"
+	"time"
 
 	"github.com/joho/godotenv"
 )
 
-func New() *Cryptella {
+func NewCryptella() *Cryptella {
 
 	err := godotenv.Load()
 	if err != nil {
 		log.Fatalf("Error loading .env file")
 	}
 
-	symbol := os.Getenv("SYMBOL")
-	fee, _ := strconv.ParseFloat(os.Getenv("FEE"), 64)
-	target, _ := strconv.ParseFloat(os.Getenv("TARGET"), 64)
-	stopLoss, _ := strconv.ParseFloat(os.Getenv("STOP_LOSS"), 64)
-
-	interval := os.Getenv("INTERVAL")
-	maxTrades, _ := strconv.Atoi(os.Getenv("MAX_TRADES"))
-	limit, _ := strconv.Atoi(os.Getenv("LIMIT"))
-	balanceAsset, _ := strconv.ParseFloat(os.Getenv("BALANCE_ASSET"), 64)
+	api := NewApi()
+	trade := NewTrade(api)
 
 	cryptella := &Cryptella{
-		symbol:       symbol,
-		fee:          fee,
-		stopLoss:     stopLoss,
-		target:       target,
-		maxTrades:    maxTrades,
-		interval:     interval,
-		limit:        limit,
-		balanceAsset: balanceAsset,
-		status:       NONE,
-	}
 
-	cryptella.fillApi()
-	cryptella.fillAmount()
-	cryptella.fillBuyThreshold()
-	cryptella.fillLowPrice()
+		api:    api,
+		trade:  trade,
+		status: NONE,
+		stopCh: make(chan struct{}),
+	}
 
 	return cryptella
 }
-func (c *Cryptella) fillBuyThreshold() {
-	buyThresehold, _ := strconv.ParseFloat(os.Getenv("BUY_THRESEHOLD"), 64)
-	c.buyThresehold = buyThresehold
-}
 
-func (c *Cryptella) Start() {
+func (c Cryptella) listenPrice() {
+	ticker := time.NewTicker(700 * time.Millisecond)
+	defer ticker.Stop()
 
 	for {
-		if c.maxTrades == 0 {
-			fmt.Println("Max trades reached")
-			break
+		select {
+		case <-ticker.C:
+			price, err := c.api.GetPriceFromApi(c.trade.symbol)
+			if err != nil {
+				log.Printf("Error fetching price: %v", err)
+				continue
+			}
+			
+			if price != c.trade.current {
+				c.analyze(price)
+			}
+		case <-c.stopCh:
+			return
 		}
-		c.analyze()
 	}
+}
 
+func (c Cryptella) Start() {
+	c.listenPrice()
+}
+
+func (c Cryptella) Stop() {
+	c.stopCh <- struct{}{}
 }
