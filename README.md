@@ -68,7 +68,8 @@ go run main.go --history
 
 You can configure the trading bot using environment variables. Here are the available options:
 
-BINANCE_API_KEY: Your Binance API key
+```properties
+BINANCE_API_KEY: Your Binance API key.
 BINANCE_API_SECRET: Your Binance API secret
 SYMBOL: The cryptocurrency pair you're trading (e.g., XLMUSDT)
 AMOUNT: The amount of the asset to use for trading
@@ -79,3 +80,4 @@ SIMPLIFIED: Enable simplified trading mode (true or false)
 BUY_PRICE: The buy price for simplified mode (-1 for dynamic price)
 SELL_PRICE: The sell price for simplified mode (-1 for dynamic price)
 STOP_LOSS: The stop loss percentage (e.g., 0.01 for 1%)
+```
