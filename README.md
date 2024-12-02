@@ -71,7 +71,7 @@ You can configure the trading bot using environment variables. Here are the avai
 ```properties
 BINANCE_API_KEY: Your Binance API key.
 BINANCE_API_SECRET: Your Binance API secret
-SYMBOL: The cryptocurrency pair you're trading (e.g., XLMUSDT)
+SYMBOL: The cryptocurrency pair you are trading (e.g., XLMUSDT)
 AMOUNT: The amount of the asset to use for trading
 FEE: The trading fee (e.g., 0.002 for 0.2%)
 TARGET: The target profit (e.g., 0.002 for 0.2%)
