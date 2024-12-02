@@ -8,8 +8,7 @@ import (
 )
 
 type Logger struct {
-	file   *os.File
-	header bool
+	file *os.File
 }
 
 func NewLogger() (*Logger, error) {
@@ -29,8 +28,7 @@ func NewLogger() (*Logger, error) {
 	}
 
 	return &Logger{
-		file:   file,
-		header: false,
+		file: file,
 	}, nil
 }
 

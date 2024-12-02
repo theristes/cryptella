@@ -23,6 +23,7 @@ type Trade struct {
 	current         float64
 	reached         float64
 	limitLossOrders int64
+	simplified      bool
 }
 
 type Api struct {
