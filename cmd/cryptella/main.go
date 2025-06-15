@@ -3,7 +3,7 @@ package main
 import (
 	"flag"
 
-	cryptella "cryptella.com/src"
+	"cryptella.com/pkg/cryptella"
 )
 
 var c *cryptella.Cryptella
